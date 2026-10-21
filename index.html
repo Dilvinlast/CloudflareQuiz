@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Онлайн-тест Cloudflare</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4f8;
+      display: flex;
+      justify-content: center;
+      padding: 50px 15px;
+    }
+
+    .quiz {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 350px;
+      max-width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 15px #0002;
+    }
+
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    input {
+      border: 1px solid #ccc;
+    }
+
+    button {
+      border: none;
+      background: #f48120;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #d96d10;
+    }
+
+    #result {
+      font-weight: bold;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="quiz">
+    <h2>Онлайн-тест</h2>
+    <p id="question">Загрузка вопроса...</p>
+
+    <input id="answer" placeholder="Введите ответ">
+
+    <button onclick="checkAnswer()">
+      Проверить ответ
+    </button>
+
+    <button onclick="nextQuestion()">
+      Следующий вопрос
+    </button>
+
+    <p id="result"></p>
+  </div>
+
+  <script>
+    const API =
+      "https://my-first-worker.yurgen-novickis2022.workers.dev";
+
+    let currentId = 1;
+
+    async function loadQuestion() {
+      const questionElement =
+        document.getElementById("question");
+
+      questionElement.textContent = "Загрузка...";
+      document.getElementById("answer").value = "";
+      document.getElementById("result").textContent = "";
+
+      try {
+        const response = await fetch(
+          `${API}/?id=${currentId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Вопрос не найден");
+        }
+
+        const data = await response.json();
+        questionElement.textContent = data.question;
+
+      } catch (error) {
+        questionElement.textContent =
+          "Не удалось загрузить вопрос";
+        console.error(error);
+      }
+    }
+
+    async function checkAnswer() {
+      const answer =
+        document.getElementById("answer").value;
+
+      const result =
+        document.getElementById("result");
+
+      result.textContent = "Проверяем...";
+
+      try {
+        const response = await fetch(API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: currentId,
+            answer: answer
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Ошибка проверки");
+        }
+
+        const data = await response.json();
+
+        result.textContent = data.message;
+        result.style.color =
+          data.correct ? "green" : "red";
+
+      } catch (error) {
+        result.textContent =
+          "Не удалось проверить ответ";
+        result.style.color = "red";
+        console.error(error);
+      }
+    }
+
+    function nextQuestion() {
+      currentId++;
+
+      if (currentId > 3) {
+        currentId = 1;
+      }
+
+      loadQuestion();
+    }
+
+    loadQuestion();
+  </script>
+
+</body>
+</html>
